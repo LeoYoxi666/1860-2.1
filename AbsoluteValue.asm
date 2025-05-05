@@ -1,41 +1,55 @@
 // AbsoluteValue.asm
-// 计算 |R0| 存入 R1，并设置标志 R2、R3
+// Compute the absolute value of x (stored in R0)
+// Store |x| in R1, set flags in R2 and R3
+// R2 = 1 if x < 0, else 0
+// R3 = 1 if abs(x) is not representable in 2's complement
 
-@R0
-D=M      // D = R0
 @R2
-M=0      // R2 = 0 (默认非负)
+M=0       // R2 = 0 (assume x is not negative)
 
 @R3
-M=0      // R3 = 0 (默认绝对值可计算)
+M=0       // R3 = 0 (assume abs(x) is representable)
 
-// 检查符号位
 @R0
-D=M
+D=M       // D = x
+
 @NEGATIVE
-D;JLT    // 如果 R0 < 0，跳转到 NEGATIVE 处理
+D;JLT     // If x < 0, jump to NEGATIVE to compute -x
 
-// R0 为非负数，直接赋值
+// Case: x >= 0
 @R0
-D=M
+D=M       // Load x again
 @R1
-M=D
+M=D       // R1 = x (no need to negate)
 @END
-0;JMP
+0;JMP     // End program
 
 (NEGATIVE)
-// R0 为负数，设置 R2 = 1
+// Case: x < 0
 @R2
-M=1
+M=1       // Set R2 = 1 to indicate x was negative
 
-// 计算 -R0 = ~R0 + 1
 @R0
 D=M
-D=-D     // D = -R0
+D=-D      // D = -x = ~x + 1 (2's complement negation)
 
 @R1
-M=D      // R1 = -R0
+M=D       // Store |x| in R1
+
+// Check if x == -x (this only happens for -32768)
+@R0
+D=M
+@R1
+D=D-M
+@END
+D;JEQ     // If x == -x, overflow → jump to END after setting R3
+
+@END
+0;JMP     // No overflow, finish execution
+
+@R3
+M=1       // Set R3 = 1 → absolute value not representable
 
 (END)
 @END
-0;JMP    // 无限循环，防止执行其他代码
+0;JMP     // Infinite loop to halt program

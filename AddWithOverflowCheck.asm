@@ -1,54 +1,53 @@
 // AddWithOverflowCheck.asm
+// Compute z = x + y and store in R2
+// If overflow occurs, set R3 = 1, else R3 = 0
 
 @R0
-D=M      // D = x
+D=M       // D = x
+
 @R1
-D=D+M    // D = x + y
+D=D+M     // D = x + y
 
 @R2
-M=D      // R2 = x + y
+M=D       // Store result (z) in R2
 
-// 计算溢出
 @R3
-M=0      // 默认 R3 = 0（无溢出）
+M=0       // Assume no overflow (R3 = 0)
 
 @R0
-D=M
+D=M       // Load x to check sign
 @POSITIVE_X
-D;JGE    // 如果 x >= 0，跳转到 POSITIVE_X 处理
+D;JGE     // If x >= 0, go to POSITIVE_X case
 
-(NEGATIVE_X)  // x < 0
+// x < 0 case
 @R1
-D=M
+D=M       // Load y to check sign
 @CHECK_OVERFLOW
-D;JLT    // 如果 y 也 < 0，跳转到 CHECK_OVERFLOW 处理
+D;JLT     // If y < 0, possible overflow
 @END
-0;JMP    // 否则不溢出，结束
+0;JMP     // If y >= 0, no overflow
 
-(POSITIVE_X)  // x >= 0
+(POSITIVE_X)
+// x >= 0 case
 @R1
-D=M
+D=M       // Load y to check sign
 @CHECK_OVERFLOW
-D;JGE    // 如果 y 也 >= 0，跳转到 CHECK_OVERFLOW 处理
+D;JGE     // If y >= 0, possible overflow
 @END
-0;JMP    // 否则不溢出，结束
+0;JMP     // If y < 0, no overflow
 
 (CHECK_OVERFLOW)
 @R2
-D=M
+D=M       // Load result (x + y)
 @OVERFLOW
-D;JLT    // 如果 z 变负，说明溢出
-
-@R2
-D=M
+D;JLT     // If result is negative → overflow
 @END
-D;JGE    // 如果 z 还是正的，说明没有溢出，结束
+D;JGE     // Else no overflow
 
 (OVERFLOW)
 @R3
-M=1      // 标记溢出
+M=1       // Set overflow flag to 1
 
 (END)
 @END
-0;JMP    // 无限循环
-
+0;JMP     // Infinite loop to stop execution
